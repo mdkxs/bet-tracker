@@ -11,6 +11,7 @@ export default function Home() {
     odd: "",
     stake: "",
     result: "pending",
+    username: "jardel",
   });
 
   // 🔥 Buscar apostas da base de dados
@@ -40,14 +41,15 @@ export default function Home() {
     if (!form.sport || !form.event || !form.odd || !form.stake) return;
 
     const { error } = await supabase.from("bets").insert([
-      {
-        sport: form.sport,
-        event: form.event,
-        odd: parseFloat(form.odd),
-        stake: parseFloat(form.stake),
-        result: form.result,
-      },
-    ]);
+  {
+    username: "jardel", // muda para o teu nome
+    sport: form.sport,
+    event: form.event,
+    odd: parseFloat(form.odd),
+    stake: parseFloat(form.stake),
+    result: form.result,
+  },
+]);
 
     if (error) {
       console.error(error);
@@ -213,6 +215,46 @@ function StatCard({ title, value, highlight }) {
       >
         {value}
       </p>
+    </div>
+  );
+  
+}
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
+export default async function Profile({ params }) {
+  const { username } = params;
+
+  const { data: bets } = await supabase
+    .from("bets")
+    .select("*")
+    .eq("username", username);
+
+  const totalBets = bets.length;
+  const wins = bets.filter((b) => b.result === "win").length;
+  const losses = bets.filter((b) => b.result === "loss").length;
+
+  const totalStaked = bets.reduce((acc, b) => acc + Number(b.stake), 0);
+  const totalReturned = bets.reduce((acc, b) =>
+    b.result === "win" ? acc + b.stake * b.odd : acc
+  , 0);
+
+  const profit = totalReturned - totalStaked;
+
+  return (
+    <div className="min-h-screen bg-black text-white p-10">
+      <h1 className="text-4xl font-bold text-green-500 mb-6">
+        Perfil de {username}
+      </h1>
+
+      <p>Total Apostas: {totalBets}</p>
+      <p>Ganhas: {wins}</p>
+      <p>Perdidas: {losses}</p>
+      <p>Profit: {profit.toFixed(2)}€</p>
     </div>
   );
 }
