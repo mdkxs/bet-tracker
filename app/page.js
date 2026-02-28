@@ -5,13 +5,8 @@ import { supabase } from "./lib/supabase";
 
 export default function Home() {
   const [bets, setBets] = useState([]);
-  const [form, setForm] = useState({
-    sport: "",
-    event: "",
-    odd: "",
-    stake: "",
-    result: "pending",
-  });
+
+  const initialBank = 1000; // 🔥 MUDA AQUI A TUA BANCA INICIAL
 
   useEffect(() => {
     fetchBets();
@@ -26,43 +21,21 @@ export default function Home() {
     if (data) setBets(data);
   };
 
-  const addBet = async () => {
-    if (!form.sport || !form.event || !form.odd || !form.stake) return;
-
-    await supabase.from("bets").insert([
-      {
-        username: "jardel",
-        sport: form.sport,
-        event: form.event,
-        odd: parseFloat(form.odd),
-        stake: parseFloat(form.stake),
-        result: form.result,
-      },
-    ]);
-
-    setForm({
-      sport: "",
-      event: "",
-      odd: "",
-      stake: "",
-      result: "pending",
-    });
-
-    fetchBets();
-  };
-
-  const totalStaked = bets.reduce((acc, b) => acc + Number(b.stake), 0);
-
-  const totalReturned = bets.reduce((acc, b) => {
-    if (b.result === "win") return acc + b.stake * b.odd;
-    return acc;
-  }, 0);
-
-  const profit = totalReturned - totalStaked;
-
   const wins = bets.filter((b) => b.result === "win").length;
   const losses = bets.filter((b) => b.result === "loss").length;
   const pending = bets.filter((b) => b.result === "pending").length;
+
+  const profit = bets.reduce((acc, bet) => {
+    if (bet.result === "win") {
+      return acc + bet.stake * (bet.odd - 1);
+    }
+    if (bet.result === "loss") {
+      return acc - bet.stake;
+    }
+    return acc;
+  }, 0);
+
+  const finalBank = initialBank + profit;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white p-8">
@@ -71,7 +44,8 @@ export default function Home() {
       </h1>
 
       {/* STATS */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-10">
+
         <div className="bg-zinc-900 p-4 rounded-xl">
           <p className="text-zinc-400 text-sm">Total Apostas</p>
           <p className="text-2xl font-bold">{bets.length}</p>
@@ -97,59 +71,28 @@ export default function Home() {
             {profit.toFixed(2)}€
           </p>
         </div>
-      </div>
 
-      {/* FORM */}
-      <div className="bg-zinc-900 p-6 rounded-xl mb-10">
-        <h2 className="text-xl mb-4">Adicionar Aposta</h2>
-
-        <div className="grid md:grid-cols-5 gap-3">
-          <input
-            className="bg-zinc-800 p-2 rounded"
-            placeholder="Desporto"
-            value={form.sport}
-            onChange={(e) => setForm({ ...form, sport: e.target.value })}
-          />
-          <input
-            className="bg-zinc-800 p-2 rounded"
-            placeholder="Evento"
-            value={form.event}
-            onChange={(e) => setForm({ ...form, event: e.target.value })}
-          />
-          <input
-            className="bg-zinc-800 p-2 rounded"
-            placeholder="Odd"
-            type="number"
-            value={form.odd}
-            onChange={(e) => setForm({ ...form, odd: e.target.value })}
-          />
-          <input
-            className="bg-zinc-800 p-2 rounded"
-            placeholder="Stake"
-            type="number"
-            value={form.stake}
-            onChange={(e) => setForm({ ...form, stake: e.target.value })}
-          />
-          <select
-            className="bg-zinc-800 p-2 rounded"
-            value={form.result}
-            onChange={(e) => setForm({ ...form, result: e.target.value })}
-          >
-            <option value="pending">Pendente</option>
-            <option value="win">Ganha</option>
-            <option value="loss">Perdida</option>
-          </select>
+        <div className="bg-zinc-900 p-4 rounded-xl">
+          <p className="text-zinc-400 text-sm">Banca Inicial</p>
+          <p className="text-2xl font-bold">
+            {initialBank.toFixed(2)}€
+          </p>
         </div>
 
-        <button
-          onClick={addBet}
-          className="mt-4 bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-semibold"
-        >
-          Adicionar
-        </button>
+        <div className="bg-zinc-900 p-4 rounded-xl">
+          <p className="text-zinc-400 text-sm">Banca Final</p>
+          <p
+            className={`text-2xl font-bold ${
+              finalBank >= initialBank ? "text-green-500" : "text-red-500"
+            }`}
+          >
+            {finalBank.toFixed(2)}€
+          </p>
+        </div>
+
       </div>
 
-      {/* TABLE */}
+      {/* HISTÓRICO */}
       <div className="bg-zinc-900 p-6 rounded-xl">
         <h2 className="text-xl mb-4">Histórico</h2>
 
