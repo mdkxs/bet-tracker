@@ -13,7 +13,7 @@ export default function Home() {
     result: "pending",
   });
 
-  const initialBank = 1000; // 🔥 MUDA AQUI A TUA BANCA
+  const initialBank = 309.25; // 🔥 MUDA AQUI A TUA BANCA
 
   useEffect(() => {
     fetchBets();
