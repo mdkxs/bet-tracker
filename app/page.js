@@ -6,7 +6,7 @@ import { supabase } from "./lib/supabase";
 export default function Home() {
   const [bets, setBets] = useState([]);
 
-  const initialBank = 1000; // 🔥 MUDA AQUI A TUA BANCA INICIAL
+  const initialBank = 309.25; // 🔥 MUDA AQUI A TUA BANCA INICIAL
 
   useEffect(() => {
     fetchBets();
