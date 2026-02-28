@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 
 export default function Home() {
@@ -11,50 +11,34 @@ export default function Home() {
     odd: "",
     stake: "",
     result: "pending",
-    username: "jardel",
   });
 
-  // 🔥 Buscar apostas da base de dados
   useEffect(() => {
     fetchBets();
   }, []);
 
   const fetchBets = async () => {
-  const { data, error } = await supabase
-    .from("bets")
-    .select("*")
-    .order("created_at", { ascending: false });
+    const { data } = await supabase
+      .from("bets")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  console.log("FETCH DATA:", data);
-  console.log("FETCH ERROR:", error);
+    if (data) setBets(data);
+  };
 
-  if (error) {
-    alert("Erro ao buscar apostas. Vê a consola.");
-    return;
-  }
-
-  setBets(data);
-};
-
-  // 🔥 Adicionar aposta à base de dados
   const addBet = async () => {
     if (!form.sport || !form.event || !form.odd || !form.stake) return;
 
-    const { error } = await supabase.from("bets").insert([
-  {
-    username: "jardel", // muda para o teu nome
-    sport: form.sport,
-    event: form.event,
-    odd: parseFloat(form.odd),
-    stake: parseFloat(form.stake),
-    result: form.result,
-  },
-]);
-
-    if (error) {
-      console.error(error);
-      return;
-    }
+    await supabase.from("bets").insert([
+      {
+        username: "jardel",
+        sport: form.sport,
+        event: form.event,
+        odd: parseFloat(form.odd),
+        stake: parseFloat(form.stake),
+        result: form.result,
+      },
+    ]);
 
     setForm({
       sport: "",
@@ -67,12 +51,8 @@ export default function Home() {
     fetchBets();
   };
 
-  // 📊 Estatísticas
-  const totalBets = bets.length;
-  const wins = bets.filter((b) => b.result === "win").length;
-  const losses = bets.filter((b) => b.result === "loss").length;
-
   const totalStaked = bets.reduce((acc, b) => acc + Number(b.stake), 0);
+
   const totalReturned = bets.reduce((acc, b) => {
     if (b.result === "win") return acc + b.stake * b.odd;
     return acc;
@@ -80,77 +60,80 @@ export default function Home() {
 
   const profit = totalReturned - totalStaked;
 
-  const winRate =
-    wins + losses > 0
-      ? ((wins / (wins + losses)) * 100).toFixed(1)
-      : 0;
+  const wins = bets.filter((b) => b.result === "win").length;
+  const losses = bets.filter((b) => b.result === "loss").length;
+  const pending = bets.filter((b) => b.result === "pending").length;
 
   return (
-    <div className="min-h-screen bg-black text-white p-10">
-      <h1 className="text-4xl font-bold text-green-500 mb-8">
-        Bet Tracker 🚀
+    <div className="min-h-screen bg-zinc-950 text-white p-8">
+      <h1 className="text-4xl font-bold mb-8 text-center">
+        Bet Tracker
       </h1>
 
       {/* STATS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <StatCard title="Total" value={totalBets} />
-        <StatCard title="Ganhas" value={wins} />
-        <StatCard title="Perdidas" value={losses} />
-        <StatCard title="Win Rate" value={`${winRate}%`} />
-        <StatCard title="Total Apostado" value={`${totalStaked.toFixed(2)}€`} />
-        <StatCard title="Retorno" value={`${totalReturned.toFixed(2)}€`} />
-        <StatCard
-          title="Profit"
-          value={`${profit.toFixed(2)}€`}
-          highlight={profit >= 0}
-        />
+        <div className="bg-zinc-900 p-4 rounded-xl">
+          <p className="text-zinc-400 text-sm">Total Apostas</p>
+          <p className="text-2xl font-bold">{bets.length}</p>
+        </div>
+
+        <div className="bg-zinc-900 p-4 rounded-xl">
+          <p className="text-zinc-400 text-sm">Ganhas</p>
+          <p className="text-2xl font-bold text-green-500">{wins}</p>
+        </div>
+
+        <div className="bg-zinc-900 p-4 rounded-xl">
+          <p className="text-zinc-400 text-sm">Perdidas</p>
+          <p className="text-2xl font-bold text-red-500">{losses}</p>
+        </div>
+
+        <div className="bg-zinc-900 p-4 rounded-xl">
+          <p className="text-zinc-400 text-sm">Profit</p>
+          <p
+            className={`text-2xl font-bold ${
+              profit >= 0 ? "text-green-500" : "text-red-500"
+            }`}
+          >
+            {profit.toFixed(2)}€
+          </p>
+        </div>
       </div>
 
       {/* FORM */}
-      <div className="bg-gray-900 p-6 rounded-xl mb-10">
+      <div className="bg-zinc-900 p-6 rounded-xl mb-10">
         <h2 className="text-xl mb-4">Adicionar Aposta</h2>
 
-        <div className="grid md:grid-cols-5 gap-4">
+        <div className="grid md:grid-cols-5 gap-3">
           <input
+            className="bg-zinc-800 p-2 rounded"
             placeholder="Desporto"
-            className="p-2 bg-gray-800 rounded"
             value={form.sport}
-            onChange={(e) =>
-              setForm({ ...form, sport: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, sport: e.target.value })}
           />
           <input
+            className="bg-zinc-800 p-2 rounded"
             placeholder="Evento"
-            className="p-2 bg-gray-800 rounded"
             value={form.event}
-            onChange={(e) =>
-              setForm({ ...form, event: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, event: e.target.value })}
           />
           <input
+            className="bg-zinc-800 p-2 rounded"
             placeholder="Odd"
             type="number"
-            className="p-2 bg-gray-800 rounded"
             value={form.odd}
-            onChange={(e) =>
-              setForm({ ...form, odd: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, odd: e.target.value })}
           />
           <input
-            placeholder="Stake €"
+            className="bg-zinc-800 p-2 rounded"
+            placeholder="Stake"
             type="number"
-            className="p-2 bg-gray-800 rounded"
             value={form.stake}
-            onChange={(e) =>
-              setForm({ ...form, stake: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, stake: e.target.value })}
           />
           <select
-            className="p-2 bg-gray-800 rounded"
+            className="bg-zinc-800 p-2 rounded"
             value={form.result}
-            onChange={(e) =>
-              setForm({ ...form, result: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, result: e.target.value })}
           >
             <option value="pending">Pendente</option>
             <option value="win">Ganha</option>
@@ -160,62 +143,46 @@ export default function Home() {
 
         <button
           onClick={addBet}
-          className="mt-4 bg-green-600 px-6 py-2 rounded hover:bg-green-700"
+          className="mt-4 bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-semibold"
         >
           Adicionar
         </button>
       </div>
 
-      {/* LISTA */}
-      <div>
-        <h2 className="text-xl mb-4">Apostas</h2>
+      {/* TABLE */}
+      <div className="bg-zinc-900 p-6 rounded-xl">
+        <h2 className="text-xl mb-4">Histórico</h2>
+
         <div className="space-y-3">
           {bets.map((bet) => (
             <div
               key={bet.id}
-              className="bg-gray-900 p-4 rounded flex justify-between"
+              className="flex justify-between bg-zinc-800 p-3 rounded-lg"
             >
               <div>
-                <p className="font-bold">{bet.event}</p>
-                <p className="text-sm text-gray-400">
-                  {bet.sport} • Odd {bet.odd} • {bet.stake}€
+                <p className="font-semibold">{bet.event}</p>
+                <p className="text-sm text-zinc-400">{bet.sport}</p>
+              </div>
+
+              <div className="text-right">
+                <p>Odd: {bet.odd}</p>
+                <p>Stake: {bet.stake}€</p>
+                <p
+                  className={
+                    bet.result === "win"
+                      ? "text-green-500"
+                      : bet.result === "loss"
+                      ? "text-red-500"
+                      : "text-yellow-500"
+                  }
+                >
+                  {bet.result}
                 </p>
               </div>
-              <span
-                className={`font-bold ${
-                  bet.result === "win"
-                    ? "text-green-500"
-                    : bet.result === "loss"
-                    ? "text-red-500"
-                    : "text-yellow-400"
-                }`}
-              >
-                {bet.result.toUpperCase()}
-              </span>
             </div>
           ))}
         </div>
       </div>
     </div>
   );
-}
-
-function StatCard({ title, value, highlight }) {
-  return (
-    <div className="bg-gray-900 p-4 rounded-xl">
-      <p className="text-gray-400 text-sm">{title}</p>
-      <p
-        className={`text-2xl font-bold ${
-          highlight === undefined
-            ? "text-white"
-            : highlight
-            ? "text-green-500"
-            : "text-red-500"
-        }`}
-      >
-        {value}
-      </p>
-    </div>
-  );
-  
 }
